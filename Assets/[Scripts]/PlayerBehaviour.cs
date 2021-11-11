@@ -11,14 +11,20 @@ public class PlayerBehaviour : MonoBehaviour
     public Transform groundOrigin;
     public float groundRadius;
     public LayerMask groundLayerMask;
+    [Range (0.1f, 0.9f)]
+    public float airControlFactor;
+
+    [Header("Animation")]
+    public PlayerAnimationState state;
 
     private Rigidbody2D rigidbody;
+    private Animator animatorController;
 
     // Start is called before the first frame update
     void Start()
     {
         rigidbody = GetComponent<Rigidbody2D>();
-
+        animatorController = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -26,25 +32,31 @@ public class PlayerBehaviour : MonoBehaviour
     {
         Move();
         CheckIfGrounded();
+
     }
 
     private void Move()
     {
-        if(isGrounded)
-        {
-            //float detlaTime = Time.deltaTime;
+        float x = Input.GetAxisRaw("Horizontal");
 
+        if (isGrounded)
+        {
             //Keyboard Input
-            float x = Input.GetAxisRaw("Horizontal");
             float y = Input.GetAxisRaw("Vertical");
             float jump = Input.GetAxisRaw("Jump");
 
             //Check for Flip
 
-            if(x != 0)
+            if (x != 0)
             {
                 x = FlipAnimation(x);
-
+                animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.RUN);//Run state
+                state = PlayerAnimationState.RUN;
+            }
+            else
+            {
+                animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.IDLE);//Idle state AnimationStats
+                state = PlayerAnimationState.IDLE;
             }
 
             //Touch Input
@@ -54,14 +66,29 @@ public class PlayerBehaviour : MonoBehaviour
                 worldTouch = Camera.main.ScreenToWorldPoint(touch.position);
             }
 
-            float horizontalMoveForce = x * horizontalForce;// * detlaTime;
-            float jumpMoveForce = jump * verticalForce;// * detlaTime;
+            float horizontalMoveForce = x * horizontalForce;
+            float jumpMoveForce = jump * verticalForce;
 
             float mass = rigidbody.mass * rigidbody.gravityScale;
 
 
-            rigidbody.AddForce(new Vector2(horizontalMoveForce, jumpMoveForce));
+            rigidbody.AddForce(new Vector2(horizontalMoveForce, jumpMoveForce) * mass);
             rigidbody.velocity *= 0.99f;// Scaling / stopping hack
+        }
+        else //Air Control
+        {
+            animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.Jump);//Jump state
+            state = PlayerAnimationState.Jump;
+
+            if (x != 0)
+            {
+                x = FlipAnimation(x);
+
+                float horizontalMoveForce = x * horizontalForce * airControlFactor;
+                float mass = rigidbody.mass * rigidbody.gravityScale;
+
+                rigidbody.AddForce(new Vector2(horizontalMoveForce, 0.0f) * mass);
+            }
         }
     }
 
@@ -71,7 +98,7 @@ public class PlayerBehaviour : MonoBehaviour
 
         isGrounded = (hit) ? true : false;
     }
-    
+
     private float FlipAnimation(float x)
     {
         // depending on direction scale acress the x-axis either 1 or -1
@@ -83,7 +110,6 @@ public class PlayerBehaviour : MonoBehaviour
     }
 
     //UTILITIES
-
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
