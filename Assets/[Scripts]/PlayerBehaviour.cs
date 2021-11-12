@@ -109,13 +109,7 @@ public class PlayerBehaviour : MonoBehaviour
 
     }
 
-    //UTILITIES
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(groundOrigin.position, groundRadius);
-    }
-
+    //EVENTS
     private void OnCollisionEnter2D(Collision2D other)
     {
         if (other.gameObject.CompareTag("Platform"))
@@ -130,5 +124,12 @@ public class PlayerBehaviour : MonoBehaviour
         {
             transform.SetParent(null);
         }
+    }
+
+    //UTILITIES
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(groundOrigin.position, groundRadius);
     }
 }
